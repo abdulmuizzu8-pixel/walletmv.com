@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SpendWise — Personal Finance Tracker</title>
+
+  <!-- FontAwesome Icons & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <!-- Chart.js for Reports & Graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --primary: #0066FF;
+      --primary-light: #EBF3FF;
+      --success: #10B981;
+      --success-light: #D1FAE5;
+      --danger: #EF4444;
+      --danger-light: #FEE2E2;
+      --warning: #F59E0B;
+      --warning-light: #FEF3C7;
+
+      --bg: #F8FAFC;
+      --card: #FFFFFF;
+      --border: #E2E8F0;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+
+      --radius: 12px;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* --- SIDEBAR --- */
+    aside {
+      width: 250px;
+      background: var(--card);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 1.5rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 2rem;
+    }
+
+    .brand i {
+      font-size: 1.5rem;
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      color: var(--text-muted);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav-item:hover, .nav-item.active {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #CBD5E1;
+      object-fit: cover;
+    }
+
+    /* --- MAIN CONTENT AREA --- */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .header h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+    }
+
+    .header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .btn {
+      padding: 0.65rem 1.25rem;
+      border-radius: var(--radius);
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { opacity: 0.9; }
+
+    /* --- METRICS GRID --- */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .metric-card {
+      background: var(--card);
+      padding: 1.5rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .metric-card .title {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-card .value {
+      font-size: 2rem;
+      font-weight: 800;
+    }
+
+    .value.balance { color: var(--primary); }
+    .value.income { color: var(--success); }
+    .value.spending { color: var(--danger); }
+
+    /* --- DASHBOARD CONTENT GRID --- */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-header h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    /* --- TRANSACTIONS LIST --- */
+    .tx-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .tx-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tx-item:last-child { border-bottom: none; }
+
+    .tx-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .tx-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    .tx-details h4 { font-size: 0.95rem; font-weight: 700; }
+    .tx-details p { font-size: 0.75rem; color: var(--text-muted); }
+
+    .tx-amount { font-weight: 700; font-size: 0.95rem; }
+    .tx-amount.negative { color: var(--danger); }
+    .tx-amount.positive { color: var(--success); }
+
+    /* --- SAVINGS GOALS --- */
+    .goals-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+
+    .goal-card {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      background: var(--card);
+      padding: 1.25rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .goal-img {
+      width: 60px;
+      height: 60px;
+      border-radius: 10px;
+      object-fit: cover;
+    }
+
+    .goal-info { flex: 1; }
+    .goal-info h4 { font-size: 1rem; margin-bottom: 0.25rem; }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      margin: 8px 0;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--primary);
+    }
+
+    /* --- MODAL STYLING --- */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal {
+      background: white;
+      padding: 2rem;
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .modal h2 { margin-bottom: 1.5rem; font-size: 1.25rem; }
+    .form-group { margin-bottom: 1.25rem; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 0.65rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    /* VIEW MANAGEMENT */
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR NAVIGATION -->
+  <aside>
+    <div>
+      <div class="brand">
+        <i class="fa-solid fa-wallet"></i> SpendWise
+      </div>
+      <ul class="nav-list">
+        <li class="nav-item active" onclick="switchView('dashboard', this)"><i class="fa-solid fa-chart-pie"></i> Dashboard</li>
+        <li class="nav-item" onclick="switchView('transactions', this)"><i class="fa-solid fa-receipt"></i> Transactions</li>
+        <li class="nav-item" onclick="switchView('goals', this)"><i class="fa-solid fa-bullseye"></i> Savings Goals</li>
+        <li class="nav-item" onclick="switchView('settings', this)"><i class="fa-solid fa-gear"></i> Settings</li>
+      </ul>
+    </div>
+
+    <div class="user-profile">
+      <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" class="avatar" alt="User Avatar" />
+      <div>
+        <h4 style="font-size: 0.9rem;">Alex Johnson</h4>
+        <p style="font-size: 0.75rem; color: var(--text-muted);">alex@example.com</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN VIEW CONTAINER -->
+  <main>
+
+    <!-- 1. DASHBOARD VIEW -->
+    <div id="dashboard-view" class="view-section active">
+      <div class="header">
+        <div>
+          <h1>Good morning, Alex 👋</h1>
+          <p>Here's your spending overview today.</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="openModal('expense')"><i class="fa-solid fa-plus"></i> Add Expense</button>
+          <button class="btn btn-success" onclick="openModal('income')"><i class="fa-solid fa-plus"></i> Add Income</button>
+        </div>
+      </div>
+
+      <!-- Financial Metrics -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="title">Current Balance</div>
+          <div class="value balance" id="total-balance">$880</div>
+        </div>
+        <div class="metric-card">
+          <div class="title">Income</div>
+          <div class="value income" id="total-income">$2,500</div>
+        </div>
+        <div class="metric-card">
+          <div class="title">Spending</div>
+          <div class="value spending" id="total-expenses">$1,620</div>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <!-- Recent Transactions -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Recent Transactions</h3>
+          </div>
+          <div class="tx-list" id="dashboard-tx-list">
+            <!-- JS populated -->
+          </div>
+        </div>
+
+        <!-- Spending Breakdown Donut Chart -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Spending Breakdown</h3>
+          </div>
+          <canvas id="spendingChart" style="max-height: 250px;"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. TRANSACTIONS VIEW -->
+    <div id="transactions-view" class="view-section">
+      <div class="header">
+        <div>
+          <h1>Transactions</h1>
+          <p>View and manage all your financial records.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="tx-list" id="all-tx-list">
+          <!-- JS populated -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. SAVINGS GOALS VIEW -->
+    <div id="goals-view" class="view-section">
+      <div class="header">
+        <div>
+          <h1>Savings Goals</h1>
+          <p>Save for your dreams and track your progress.</p>
+        </div>
+      </div>
+      <div class="goals-grid">
+        <div class="goal-card">
+          <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=200&q=80" class="goal-img" alt="Maldives" />
+          <div class="goal-info">
+            <h4>Maldives Holiday</h4>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: 44%;"></div>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">$880 of $2,000 (44%)</p>
+          </div>
+        </div>
+
+        <div class="goal-card">
+          <img src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=200&q=80" class="goal-img" alt="Laptop" />
+          <div class="goal-info">
+            <h4>New Laptop</h4>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: 20%;"></div>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">$300 of $1,500 (20%)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. SETTINGS VIEW -->
+    <div id="settings-view" class="view-section">
+      <div class="header">
+        <div>
+          <h1>Settings</h1>
+          <p>Manage your account preferences.</p>
+        </div>
+      </div>
+      <div class="card" style="max-width: 600px;">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" value="Alex Johnson" />
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" value="alex@example.com" />
+        </div>
+        <div class="form-group">
+          <label>Currency</label>
+          <select>
+            <option>USD ($)</option>
+            <option>EUR (€)</option>
+            <option>GBP (£)</option>
+            <option>MVR (Rf)</option>
+          </select>
+        </div>
+        <button class="btn btn-primary">Save Changes</button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ADD TRANSACTION MODAL -->
+  <div class="modal-overlay" id="txModal">
+    <div class="modal">
+      <h2 id="modalTitle">Add Transaction</h2>
+      <form id="txForm">
+        <input type="hidden" id="txType" value="expense" />
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" id="txDesc" placeholder="e.g. Groceries, Salary" required />
+        </div>
+        <div class="form-group">
+          <label>Amount ($)</label>
+          <input type="number" id="txAmount" placeholder="0.00" required />
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="txCategory">
+            <option value="Food & Dining">Food & Dining</option>
+            <option value="Transport">Transport</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Bills">Bills</option>
+            <option value="Income">Income / Salary</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+          <button type="button" class="btn" style="background: #E2E8F0;" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- APPLICATION JAVASCRIPT -->
+  <script>
+    // Initial State Data
+    let transactions = [
+      { id: 1, desc: 'Food & Dining', amount: 25, type: 'expense', category: 'Food & Dining', date: 'Today' },
+      { id: 2, desc: 'Transport', amount: 10, type: 'expense', category: 'Transport', date: 'Yesterday' },
+      { id: 3, desc: 'Shopping', amount: 50, type: 'expense', category: 'Shopping', date: 'Sep 4' },
+      { id: 4, desc: 'Salary Deposit', amount: 2500, type: 'income', category: 'Income', date: 'Sep 1' },
+      { id: 5, desc: 'Electricity Bill', amount: 80, type: 'expense', category: 'Bills', date: 'Aug 28' }
+    ];
+
+    let chartInstance = null;
+
+    // View Switching
+    function switchView(viewName, element) {
+      document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+
+      document.getElementById(viewName + '-view').classList.add('active');
+      element.classList.add('active');
+    }
+
+    // Render Transactions
+    function renderApp() {
+      const dashboardTxList = document.getElementById('dashboard-tx-list');
+      const allTxList = document.getElementById('all-tx-list');
+
+      dashboardTxList.innerHTML = '';
+      allTxList.innerHTML = '';
+
+      let incomeSum = 0;
+      let expenseSum = 0;
+
+      transactions.forEach(tx => {
+        if (tx.type === 'income') incomeSum += tx.amount;
+        else expenseSum += tx.amount;
+
+        const html = `
+          <div class="tx-item">
+            <div class="tx-info">
+              <div class="tx-icon" style="background: ${tx.type === 'income' ? '#D1FAE5' : '#FEE2E2'}; color: ${tx.type === 'income' ? '#10B981' : '#EF4444'};">
+                <i class="fa-solid ${tx.type === 'income' ? 'fa-arrow-down' : 'fa-basket-shopping'}"></i>
+              </div>
+              <div class="tx-details">
+                <h4>${tx.desc}</h4>
+                <p>${tx.date} • ${tx.category}</p>
+              </div>
+            </div>
+            <div class="tx-amount ${tx.type === 'income' ? 'positive' : 'negative'}">
+              ${tx.type === 'income' ? '+' : '-'}$${tx.amount.toFixed(2)}
+            </div>
+          </div>
+        `;
+
+        allTxList.innerHTML += html;
+      });
+
+      // Populate dashboard with first 3 transactions
+      transactions.slice(0, 3).forEach(tx => {
+        const html = `
+          <div class="tx-item">
+            <div class="tx-info">
+              <div class="tx-icon" style="background: ${tx.type === 'income' ? '#D1FAE5' : '#FEE2E2'}; color: ${tx.type === 'income' ? '#10B981' : '#EF4444'};">
+                <i class="fa-solid ${tx.type === 'income' ? 'fa-arrow-down' : 'fa-basket-shopping'}"></i>
+              </div>
+              <div class="tx-details">
+                <h4>${tx.desc}</h4>
+                <p>${tx.date}</p>
+              </div>
+            </div>
+            <div class="tx-amount ${tx.type === 'income' ? 'positive' : 'negative'}">
+              ${tx.type === 'income' ? '+' : '-'}$${tx.amount.toFixed(2)}
+            </div>
+          </div>
+        `;
+        dashboardTxList.innerHTML += html;
+      });
+
+      // Update Metrics
+      document.getElementById('total-income').innerText = `$${incomeSum.toLocaleString()}`;
+      document.getElementById('total-expenses').innerText = `$${expenseSum.toLocaleString()}`;
+      document.getElementById('total-balance').innerText = `$${(incomeSum - expenseSum).toLocaleString()}`;
+
+      updateChart();
+    }
+
+    // Modal Operations
+    function openModal(type) {
+      document.getElementById('txType').value = type;
+      document.getElementById('modalTitle').innerText = type === 'expense' ? 'Add Expense' : 'Add Income';
+      document.getElementById('txModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('txModal').style.display = 'none';
+      document.getElementById('txForm').reset();
+    }
+
+    document.getElementById('txForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const desc = document.getElementById('txDesc').value;
+      const amount = parseFloat(document.getElementById('txAmount').value);
+      const type = document.getElementById('txType').value;
+      const category = document.getElementById('txCategory').value;
+
+      transactions.unshift({
+        id: Date.now(),
+        desc,
+        amount,
+        type,
+        category,
+        date: 'Today'
+      });
+
+      renderApp();
+      closeModal();
+    });
+
+    // Chart.js Spending Breakdown
+    function updateChart() {
+      const ctx = document.getElementById('spendingChart').getContext('2d');
+
+      if (chartInstance) chartInstance.destroy();
+
+      chartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Food & Dining', 'Transport', 'Shopping', 'Bills'],
+          datasets: [{
+            data: [25, 10, 50, 80],
+            backgroundColor: ['#0066FF', '#10B981', '#F59E0B', '#EF4444']
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+    }
+
+    // Initial Load
+    renderApp();
+  </script>
+</body>
+</html>
