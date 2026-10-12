@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
 import { OFFICIAL_USD_RATE, formatMoney, parseAmount } from '../lib/finance';
@@ -10,15 +10,12 @@ export function SettingsScreen() {
   const [rateText, setRateText] = useState(String(state.settings.usdRate));
   const [startText, setStartText] = useState(String(state.settings.startingBalance / 100));
   const [saved, setSaved] = useState(false);
-  const [syncedSettings, setSyncedSettings] = useState(state.settings);
 
   // Keep the form in sync when settings change elsewhere (e.g. data reset).
-  // Adjusting state during render avoids an extra effect-driven render.
-  if (syncedSettings !== state.settings) {
-    setSyncedSettings(state.settings);
+  useEffect(() => {
     setRateText(String(state.settings.usdRate));
     setStartText(String(state.settings.startingBalance / 100));
-  }
+  }, [state.settings]);
 
   const rate = Number(rateText);
   const rateValid = Number.isFinite(rate) && rate > 0;
