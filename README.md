@@ -47,8 +47,3 @@ src/screens/                 Home, Activity, Budgets, Bills, Settings
 src/components/              AddTransaction form, TransactionRow
 docs/maldives-market-research.md   market research behind the MVP scope
 ```
-
-## Claude Code
-
-Setup for Claude Code with VS Code, GitHub, Vercel and Expo/EAS: [`docs/claude-code-setup.md`](docs/claude-code-setup.md).
-Project instructions for Claude live in `CLAUDE.md`.
