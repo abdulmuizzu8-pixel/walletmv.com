@@ -31,7 +31,7 @@ export function AddTransaction({ visible, onClose }: { visible: boolean; onClose
 
   const amount = parseAmount(amountText);
   const rate = Number(rateText);
-  const rateValid = currency === 'MVR' || (Number.isFinite(rate) && rate > 0);
+  const rateValid = currency === 'MVR' || (Number.isFinite(rate) && rate > 0 && rate < 1000);
   const dateValid = isValidISODate(date);
   const valid = amount !== null && rateValid && dateValid;
 

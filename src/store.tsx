@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useReducer, useState, type ReactNode } from 'react';
 
-import { demoState, emptyState, makeTransaction, monthKey, newId, type Bill, type Settings, type State, type Transaction } from './lib/finance';
+import { demoState, makeTransaction, parseSavedState, monthKey, newId, type Bill, type Settings, type State, type Transaction } from './lib/finance';
 
 const STORAGE_KEY = 'walletmv/state/v1';
 
@@ -72,7 +72,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
       .then((raw) => {
-        if (raw) dispatch({ type: 'load', state: { ...emptyState(), ...JSON.parse(raw) } });
+        if (raw) dispatch({ type: 'load', state: parseSavedState(raw) });
       })
       .catch(() => {
         // Corrupt or unreadable storage: keep the in-memory demo data.

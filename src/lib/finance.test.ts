@@ -12,6 +12,7 @@ import {
   makeTransaction,
   monthSummary,
   parseAmount,
+  parseSavedState,
   safeToSpend,
   toMVR,
   unpaidBills,
@@ -114,4 +115,28 @@ test('demoState is internally consistent for any day of the month', () => {
     }
     assert.ok(balance(s) > 0);
   }
+});
+
+test('parseAmount rejects absurdly large numbers', () => {
+  assert.equal(parseAmount('99999999999'), null);
+  assert.equal(parseAmount('9999999999.99'), 999999999999);
+});
+
+test('parseSavedState drops malformed data instead of trusting it', () => {
+  const good = demoState(oct10);
+  assert.deepEqual(parseSavedState(JSON.stringify(good)), good);
+  assert.deepEqual(parseSavedState('not json'), emptyState());
+  assert.deepEqual(parseSavedState('null'), emptyState());
+  const bad = parseSavedState(
+    JSON.stringify({
+      transactions: [{ id: 'x', type: 'hack', amount: '1' }, good.transactions[0]],
+      budgets: 'nope',
+      bills: [{ id: 'b', name: 'x'.repeat(5000), categoryId: 'rent', amount: 1, dueDay: 5 }],
+      settings: { usdRate: -3, startingBalance: 1.5 },
+    }),
+  );
+  assert.equal(bad.transactions.length, 1);
+  assert.deepEqual(bad.budgets, []);
+  assert.deepEqual(bad.bills, []);
+  assert.deepEqual(bad.settings, emptyState().settings);
 });

@@ -99,7 +99,7 @@ export function Field({ label, error, ...props }: TextInputProps & { label: stri
   return (
     <View style={{ marginBottom: 14 }}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput placeholderTextColor="#94a3b8" style={[styles.input, error ? { borderColor: colors.danger } : null]} {...props} />
+      <TextInput maxLength={200} placeholderTextColor="#94a3b8" style={[styles.input, error ? { borderColor: colors.danger } : null]} {...props} />
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
   );

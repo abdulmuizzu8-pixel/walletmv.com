@@ -93,7 +93,8 @@ export function categoryById(id: string): Category {
 /** Parses user input like "1,250.5" into minor units; null if invalid or not positive. */
 export function parseAmount(text: string): number | null {
   const cleaned = text.replace(/,/g, '').trim();
-  if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return null;
+  // Max 10 whole digits (under 10 billion) so totals stay well inside safe integer range.
+  if (!/^\d{1,10}(\.\d{1,2})?$/.test(cleaned)) return null;
   const value = Math.round(Number(cleaned) * 100);
   return value > 0 ? value : null;
 }
@@ -262,5 +263,62 @@ export function demoState(today: Date): State {
       { id: newId(), name: 'Dhiraagu Fibre', categoryId: 'telecom', amount: 116000, dueDay: 15 },
       { id: newId(), name: 'Bank Loan EMI', categoryId: 'loan', amount: 250000, dueDay: 25 },
     ],
+  };
+}
+
+const isStr = (v: unknown, max = 500): v is string => typeof v === 'string' && v.length <= max;
+const isInt = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v);
+const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+
+function isTransaction(v: unknown): v is Transaction {
+  const t = v as Transaction;
+  return (
+    typeof v === 'object' && v !== null &&
+    isStr(t.id, 100) && (t.type === 'expense' || t.type === 'income') &&
+    isInt(t.amount) && (t.currency === 'MVR' || t.currency === 'USD') &&
+    isNum(t.rate) && isInt(t.mvr) && isStr(t.categoryId, 100) && isStr(t.method, 100) &&
+    isStr(t.note) && isStr(t.date, 10) && isValidISODate(t.date)
+  );
+}
+
+function isBudget(v: unknown): v is Budget {
+  const b = v as Budget;
+  return typeof v === 'object' && v !== null && isStr(b.categoryId, 100) && isInt(b.limit);
+}
+
+function isBill(v: unknown): v is Bill {
+  const b = v as Bill;
+  return (
+    typeof v === 'object' && v !== null &&
+    isStr(b.id, 100) && isStr(b.name, 200) && isStr(b.categoryId, 100) && isInt(b.amount) &&
+    isInt(b.dueDay) && b.dueDay >= 1 && b.dueDay <= 31 &&
+    (b.paidMonth === undefined || isStr(b.paidMonth, 7))
+  );
+}
+
+/**
+ * Turns saved JSON back into State, dropping anything malformed instead of
+ * trusting it. Stored data can be corrupted or edited (e.g. in browser
+ * devtools on the web build), so it is treated like any other untrusted input.
+ */
+export function parseSavedState(raw: string): State {
+  const base = emptyState();
+  let data: unknown;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return base;
+  }
+  if (typeof data !== 'object' || data === null) return base;
+  const d = data as Partial<Record<keyof State, unknown>>;
+  const s = (d.settings ?? {}) as Partial<Settings>;
+  return {
+    transactions: Array.isArray(d.transactions) ? d.transactions.filter(isTransaction) : [],
+    budgets: Array.isArray(d.budgets) ? d.budgets.filter(isBudget) : [],
+    bills: Array.isArray(d.bills) ? d.bills.filter(isBill) : [],
+    settings: {
+      usdRate: isNum(s.usdRate) && s.usdRate > 0 && s.usdRate < 1000 ? s.usdRate : base.settings.usdRate,
+      startingBalance: isInt(s.startingBalance) ? s.startingBalance : base.settings.startingBalance,
+    },
   };
 }

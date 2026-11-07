@@ -18,7 +18,7 @@ export function SettingsScreen() {
   }, [state.settings]);
 
   const rate = Number(rateText);
-  const rateValid = Number.isFinite(rate) && rate > 0;
+  const rateValid = Number.isFinite(rate) && rate > 0 && rate < 1000;
   const start = startText.trim() === '' || startText.trim() === '0' ? 0 : parseAmount(startText);
 
   function save() {
